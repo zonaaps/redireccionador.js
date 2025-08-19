@@ -101,34 +101,26 @@
       const newTabUrl = url.toString();
       console.log("newTabUrl:", newTabUrl);
 
-      // Intentar abrir nueva pestaña primero
-      const newWindow = window.open('', '_blank');
-      let adWindowOpened = false;
+      // Seleccionar la URL del anuncio según el evento
+      const adUrl = isFromEmbed ? embedAdUrl : clickAdUrl;
+
+      // Intentar abrir nueva pestaña
+      const newWindow = window.open(newTabUrl, '_blank');
       if (newWindow) {
-        newWindow.location.href = newTabUrl;
         console.log("Nueva pestaña abierta con:", newTabUrl);
-        adWindowOpened = true;
       } else {
         console.error("Fallo al abrir nueva pestaña");
         const popupBlocked = document.getElementById('popupBlocked');
         if (popupBlocked) popupBlocked.style.display = 'block';
       }
 
-      // Redirigir a la URL del anuncio
-      const adUrl = isFromEmbed ? embedAdUrl : clickAdUrl;
-      if (adWindowOpened) {
-        // Si la pestaña se abrió correctamente, redirigir después de un pequeño retraso
-        setTimeout(() => {
-          console.log("Redirigiendo al anuncio:", adUrl);
-          window.location.href = adUrl;
-        }, 500);
-      } else {
-        // Si la pestaña no se abrió, redirigir directamente
-        console.log("Redirigiendo al anuncio (sin pestaña):", adUrl);
+      // Redirigir al anuncio después de un pequeño retraso
+      setTimeout(() => {
+        console.log("Redirigiendo al anuncio:", adUrl);
         window.location.href = adUrl;
-      }
+      }, 500);
 
-      // Para clics, evitar la acción por defecto
+      // Evitar la acción por defecto del clic (solo para clics)
       if (!isFromEmbed && event) {
         event.preventDefault();
         event.stopPropagation();
@@ -177,14 +169,13 @@
     }
   }, { capture: true });
 
-  // Escuchar mensajes postMessage desde embed.php JEF
+  // Escuchar mensajes postMessage desde embed.php
   window.addEventListener('message', function(event) {
     console.log("Mensaje recibido en el sitio principal:", event.data);
     if (event.data.event === 'videoPlay' && !noAd && !isProcessing) {
       const videoKey = event.data.videoKey;
       console.log("Procesando evento videoPlay, videoKey:", videoKey);
       if (!sessionStorage.getItem("adShown_" + videoKey)) {
-        // Marcar el anuncio como mostrado antes de intentar la redirección
         sessionStorage.setItem("adShown_" + videoKey, "true");
         handleAdTrigger(null, currentUrl, true);
       } else {
