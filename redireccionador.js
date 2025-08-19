@@ -227,19 +227,57 @@
   }, { capture: true });
 
   // Escuchar mensajes postMessage desde embed.php
-  window.addEventListener('message', function(event) {
-    console.log("Mensaje recibido en el sitio principal:", event.data);
-    if (event.data.event === 'videoPlay' && !noAd && !isProcessing) {
-      const videoKey = event.data.videoKey;
-      console.log("Procesando evento videoPlay, videoKey:", videoKey);
-      if (!sessionStorage.getItem("adShown_" + videoKey)) {
-        handleAdTrigger(null, currentUrl, true);
-        sessionStorage.setItem("adShown_" + videoKey, "true");
-      } else {
-        console.log("Anuncio ya mostrado para videoKey:", videoKey);
+window.addEventListener('message', function(event) {
+  console.log("Mensaje recibido en el sitio principal:", event.data);
+  if (event.data.event === 'videoPlay' && !noAd && !isProcessing) {
+    const videoKey = event.data.videoKey;
+    console.log("Procesando evento videoPlay, videoKey:", videoKey);
+
+    // Verificar si el anuncio ya fue mostrado para este video
+    if (!sessionStorage.getItem("adShown_" + videoKey)) {
+      isProcessing = true;
+      sessionStorage.setItem("adShown_" + videoKey, "true");
+      console.log("Preparando redirección para videoKey:", videoKey);
+
+      // Mostrar mensaje de transición si existe
+      const transitionMessage = document.getElementById('transitionMessage');
+      if (transitionMessage) {
+        transitionMessage.style.display = 'block';
+        console.log("Mensaje de transición mostrado");
       }
+
+      // Construir URL para nueva pestaña
+      const url = new URL(currentUrl);
+      url.searchParams.delete('noAd');
+      url.searchParams.set('noAd', '1');
+      const newTabUrl = url.toString();
+      console.log("newTabUrl:", newTabUrl);
+
+      // Intentar abrir nueva pestaña
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.location.href = newTabUrl;
+        console.log("Nueva pestaña abierta con:", newTabUrl);
+      } else {
+        console.error("Fallo al abrir nueva pestaña");
+        const popupBlocked = document.getElementById('popupBlocked');
+        if (popupBlocked) popupBlocked.style.display = 'block';
+      }
+
+      // Redirigir a la URL del anuncio después de un pequeño retraso
+      setTimeout(() => {
+        console.log("Redirigiendo al anuncio:", embedAdUrl);
+        window.location.href = embedAdUrl;
+      }, 500);
+
+      // Resetear isProcessing después de un tiempo
+      setTimeout(() => {
+        isProcessing = false;
+      }, 1000);
     } else {
-      console.log("Evento videoPlay ignorado, noAd:", noAd, "isProcessing:", isProcessing);
+      console.log("Anuncio ya mostrado para videoKey:", videoKey);
     }
-  });
-})();
+  } else {
+    console.log("Evento videoPlay ignorado, noAd:", noAd, "isProcessing:", isProcessing);
+  }
+});
