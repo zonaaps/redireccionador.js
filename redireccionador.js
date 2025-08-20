@@ -3,7 +3,7 @@
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php
   const currentUrl = window.location.href;
   const domain = window.location.origin;
-  const adInterval = 300000; // 5 minutos para clics
+  const adInterval = 120000; // 5 minutos para clics
   const maxPageLoads = 5; // Máximo de cargas antes de restablecer
   const storageCleanupInterval = 3600000; // 1 hora para limpiar sessionStorage
 
