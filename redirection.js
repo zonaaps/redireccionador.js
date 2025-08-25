@@ -1,5 +1,5 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.0
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.1
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php
   const currentUrl = window.location.href;
   const domain = window.location.origin;
@@ -83,11 +83,6 @@
 
   // Función para manejar el disparo del anuncio
   function handleAdTrigger(event, targetUrl, isFromEmbed = false) {
-    if (isTikTokBrowser) {
-      console.log("Redirección bloqueada: Navegador de TikTok detectado");
-      return;
-    }
-
     if (!isProcessing && (isFromEmbed ? !noAd : Date.now() - lastAdTime >= adInterval)) {
       isProcessing = true;
       if (!isFromEmbed) {
@@ -146,6 +141,11 @@
 
   // Escuchar clics en enlaces, excluyendo iframes
   document.addEventListener('click', (event) => {
+    if (isTikTokBrowser) {
+      console.log("Clic ignorado: Navegador de TikTok detectado");
+      return;
+    }
+
     if (event.target.closest('iframe') || event.target.ownerDocument.defaultView !== window) {
       console.log("Clic dentro de iframe o documento secundario ignorado");
       return;
@@ -185,7 +185,7 @@
       const videoKey = event.data.videoKey;
       console.log("Procesando evento videoPlay, videoKey:", videoKey);
       if (isTikTokBrowser) {
-        console.log("Reproducción directa permitida en TikTok, sin redirección");
+        console.log("Reproducción directa permitida en TikTok, sin redirección ni anuncio");
         return; // Permitir reproducción directa sin redirección en TikTok
       }
       if (!noAd && !isProcessing && !sessionStorage.getItem("adShown_" + videoKey)) {
@@ -198,4 +198,3 @@
   });
 
 })();
-
