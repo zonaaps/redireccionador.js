@@ -3,9 +3,13 @@
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php
   const currentUrl = window.location.href;
   const domain = window.location.origin;
-  const adInterval = 180000; // 3 minutos para clics
+  const adInterval = 300000; // 5 minutos para clics
   const maxPageLoads = 5; // Máximo de cargas antes de restablecer
   const storageCleanupInterval = 3600000; // 1 hora para limpiar sessionStorage
+
+  // Detectar navegador de TikTok
+  const isTikTokBrowser = /TikTok/i.test(navigator.userAgent);
+  console.log("Navegador de TikTok detectado:", isTikTokBrowser);
 
   // Generar una clave única para la página (basada en la URL)
   const pageKey = btoa(currentUrl);
@@ -79,6 +83,11 @@
 
   // Función para manejar el disparo del anuncio
   function handleAdTrigger(event, targetUrl, isFromEmbed = false) {
+    if (isTikTokBrowser) {
+      console.log("Redirección bloqueada: Navegador de TikTok detectado");
+      return;
+    }
+
     if (!isProcessing && (isFromEmbed ? !noAd : Date.now() - lastAdTime >= adInterval)) {
       isProcessing = true;
       if (!isFromEmbed) {
@@ -172,17 +181,20 @@
   // Escuchar mensajes postMessage desde embed.php
   window.addEventListener('message', function(event) {
     console.log("Mensaje recibido en el sitio principal:", event.data);
-    if (event.data.event === 'videoPlay' && !noAd && !isProcessing) {
+    if (event.data.event === 'videoPlay') {
       const videoKey = event.data.videoKey;
       console.log("Procesando evento videoPlay, videoKey:", videoKey);
-      if (!sessionStorage.getItem("adShown_" + videoKey)) {
+      if (isTikTokBrowser) {
+        console.log("Reproducción directa permitida en TikTok, sin redirección");
+        return; // Permitir reproducción directa sin redirección en TikTok
+      }
+      if (!noAd && !isProcessing && !sessionStorage.getItem("adShown_" + videoKey)) {
         sessionStorage.setItem("adShown_" + videoKey, "true");
         handleAdTrigger(null, currentUrl, true);
       } else {
-        console.log("Anuncio ya mostrado para videoKey:", videoKey);
+        console.log("Evento videoPlay ignorado, noAd:", noAd, "isProcessing:", isProcessing, "adShown:", !!sessionStorage.getItem("adShown_" + videoKey));
       }
-    } else {
-      console.log("Evento videoPlay ignorado, noAd:", noAd, "isProcessing:", isProcessing);
     }
   });
+
 })();
