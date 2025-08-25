@@ -1,6 +1,6 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.4
-  const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEFFF (Monetag)
+  const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php (Adsterra)
   const currentUrl = window.location.href;
   const domain = window.location.origin;
   const adInterval = 300000; // 5 minutos para clics
@@ -24,11 +24,11 @@
     }
 
     const iframeUrls = [
-      clickAdUrl, // Reemplaza con URLs de Monetag si las tienes
-      embedAdUrl,
-      clickAdUrl,
-      embedAdUrl,
-      clickAdUrl // 5 iframes
+      embedAdUrl, // Adsterra
+      embedAdUrl, // Adsterra
+      embedAdUrl, // Adsterra
+      embedAdUrl, // Adsterra
+      embedAdUrl // Adsterra
     ];
 
     iframeUrls.forEach((url, index) => {
@@ -194,7 +194,7 @@
       const targetUrl = target.href;
       if (!isSameDomain(targetUrl)) {
         console.log("Clic ignorado, URL fuera del dominio:", targetUrl);
-        return;
+      return;
       }
 
       if (isImageUrl(targetUrl)) {
