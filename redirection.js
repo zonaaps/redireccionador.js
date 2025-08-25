@@ -1,5 +1,5 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.1
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEFFF
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php
   const currentUrl = window.location.href;
   const domain = window.location.origin;
@@ -7,9 +7,10 @@
   const maxPageLoads = 5; // Máximo de cargas antes de restablecer
   const storageCleanupInterval = 3600000; // 1 hora para limpiar sessionStorage
 
-  // Detectar navegador de TikTok
-  const isTikTokBrowser = /TikTok/i.test(navigator.userAgent);
-  console.log("Navegador de TikTok detectado:", isTikTokBrowser);
+  // Detectar navegador de TikTok con una expresión regular más robusta
+  const userAgent = navigator.userAgent;
+  const isTikTokBrowser = /TikTok|Bytedance|ByteDance|bytedance/i.test(userAgent);
+  console.log("Navegador de TikTok detectado:", isTikTokBrowser, "User-Agent:", userAgent);
 
   // Generar una clave única para la página (basada en la URL)
   const pageKey = btoa(currentUrl);
@@ -142,7 +143,7 @@
   // Escuchar clics en enlaces, excluyendo iframes
   document.addEventListener('click', (event) => {
     if (isTikTokBrowser) {
-      console.log("Clic ignorado: Navegador de TikTok detectado");
+      console.log("Clic ignorado: Navegador de TikTok detectado, permitiendo acción normal");
       return;
     }
 
