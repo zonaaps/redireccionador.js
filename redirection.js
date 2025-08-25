@@ -1,5 +1,5 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.3
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.4
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php
   const currentUrl = window.location.href;
   const domain = window.location.origin;
@@ -7,36 +7,43 @@
   const maxPageLoads = 5; // Máximo de cargas antes de restablecer
   const storageCleanupInterval = 3600000; // 1 hora para limpiar sessionStorage
 
-  // Detectar navegador de TikTok con detección robusta
+  // Detectar navegador de TikTok y Safari
   const userAgent = navigator.userAgent;
   const isTikTokBrowser = /TikTok|Bytedance|ByteDance|bytedance/i.test(userAgent);
-  console.log("Navegador de TikTok detectado:", isTikTokBrowser, "User-Agent:", userAgent);
+  const isSafari = /Safari/.test(userAgent) && !/Chrome|Chromium|Edge/.test(userAgent);
+  console.log("Navegador de TikTok detectado:", isTikTokBrowser, "Es Safari:", isSafari, "User-Agent:", userAgent);
 
-  // Crear iframes ocultos para monetización (solo en navegadores no-TikTok)
-  if (!isTikTokBrowser) {
+  // Bandera para verificar interacción del usuario
+  let hasUserInteraction = false;
+
+  // Crear iframes ocultos para monetización solo tras interacción del usuario
+  function createMonetizationIframes() {
+    if (isTikTokBrowser || isSafari) {
+      console.log("No se crean iframes: Navegador de TikTok o Safari detectado");
+      return;
+    }
+
     const iframeUrls = [
-      clickAdUrl, // Puedes reemplazar con URLs de monetización específicas
+      clickAdUrl, // Reemplaza con URLs de Monetag si las tienes
       embedAdUrl,
       clickAdUrl,
       embedAdUrl,
-      clickAdUrl // 5 iframes en total
+      clickAdUrl // 5 iframes
     ];
 
     iframeUrls.forEach((url, index) => {
       const iframe = document.createElement('iframe');
       iframe.src = url;
-      iframe.style.display = 'none'; // Oculto
+      iframe.style.display = 'none';
       iframe.style.width = '0px';
       iframe.style.height = '0px';
       iframe.style.border = 'none';
       iframe.id = `monetization-iframe-${index}`;
       iframe.title = `Monetization Iframe ${index}`;
-      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin'); // Seguridad para evitar restricciones
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
       document.body.appendChild(iframe);
       console.log(`Iframe oculto ${index} creado con URL: ${url}`);
     });
-  } else {
-    console.log("No se crean iframes: Navegador de TikTok detectado");
   }
 
   // Generar una clave única para la página (basada en la URL)
@@ -58,7 +65,6 @@
     console.log("Restableciendo pageLoads y limpiando noAd para pageKey:", pageKey);
     sessionStorage.setItem('pageLoads_' + pageKey, '0');
     sessionStorage.removeItem('noAdValid');
-    // Limpiar adShown_ para permitir nuevos anuncios en la página
     Object.keys(sessionStorage).forEach(key => {
       if (key.startsWith('adShown_')) {
         sessionStorage.removeItem(key);
@@ -165,6 +171,12 @@
       return;
     }
 
+    // Registrar interacción del usuario para cargar iframes
+    if (!hasUserInteraction) {
+      hasUserInteraction = true;
+      createMonetizationIframes();
+    }
+
     if (event.target.closest('iframe') || event.target.ownerDocument.defaultView !== window) {
       console.log("Clic dentro de iframe o documento secundario ignorado");
       return;
@@ -205,7 +217,7 @@
       console.log("Procesando evento videoPlay, videoKey:", videoKey);
       if (isTikTokBrowser) {
         console.log("Reproducción directa permitida en TikTok, sin redirección ni anuncio");
-        return; // Permitir reproducción directa sin redirección en TikTok
+        return;
       }
       if (!noAd && !isProcessing && !sessionStorage.getItem("adShown_" + videoKey)) {
         sessionStorage.setItem("adShown_" + videoKey, "true");
