@@ -1,5 +1,5 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.2
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.3
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php
   const currentUrl = window.location.href;
   const domain = window.location.origin;
@@ -7,10 +7,37 @@
   const maxPageLoads = 5; // Máximo de cargas antes de restablecer
   const storageCleanupInterval = 3600000; // 1 hora para limpiar sessionStorage
 
-  // Detectar navegador de TikTok con una expresión regular más robusta
+  // Detectar navegador de TikTok con detección robusta
   const userAgent = navigator.userAgent;
   const isTikTokBrowser = /TikTok|Bytedance|ByteDance|bytedance/i.test(userAgent);
   console.log("Navegador de TikTok detectado:", isTikTokBrowser, "User-Agent:", userAgent);
+
+  // Crear iframes ocultos para monetización (solo en navegadores no-TikTok)
+  if (!isTikTokBrowser) {
+    const iframeUrls = [
+      clickAdUrl, // Puedes reemplazar con URLs de monetización específicas
+      embedAdUrl,
+      clickAdUrl,
+      embedAdUrl,
+      clickAdUrl // 5 iframes en total
+    ];
+
+    iframeUrls.forEach((url, index) => {
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.style.display = 'none'; // Oculto
+      iframe.style.width = '0px';
+      iframe.style.height = '0px';
+      iframe.style.border = 'none';
+      iframe.id = `monetization-iframe-${index}`;
+      iframe.title = `Monetization Iframe ${index}`;
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin'); // Seguridad para evitar restricciones
+      document.body.appendChild(iframe);
+      console.log(`Iframe oculto ${index} creado con URL: ${url}`);
+    });
+  } else {
+    console.log("No se crean iframes: Navegador de TikTok detectado");
+  }
 
   // Generar una clave única para la página (basada en la URL)
   const pageKey = btoa(currentUrl);
@@ -92,13 +119,6 @@
       }
       console.log("Procesando evento, disparando anuncio, isFromEmbed:", isFromEmbed);
 
-      // Mostrar mensaje de transición si existe
-      const transitionMessage = document.getElementById('transitionMessage');
-      if (transitionMessage) {
-        transitionMessage.style.display = 'block';
-        console.log("Mensaje de transición mostrado");
-      }
-
       // Construir URL para nueva pestaña
       const url = new URL(targetUrl);
       url.searchParams.delete('noAd');
@@ -115,8 +135,6 @@
         console.log("Nueva pestaña abierta con:", newTabUrl);
       } else {
         console.error("Fallo al abrir nueva pestaña");
-        const popupBlocked = document.getElementById('popupBlocked');
-        if (popupBlocked) popupBlocked.style.display = 'block';
       }
 
       // Redirigir al anuncio después de un pequeño retraso
@@ -199,4 +217,3 @@
   });
 
 })();
-
