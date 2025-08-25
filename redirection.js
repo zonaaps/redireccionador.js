@@ -1,5 +1,5 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEFFF
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.0
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php
   const currentUrl = window.location.href;
   const domain = window.location.origin;
@@ -198,3 +198,4 @@
   });
 
 })();
+
