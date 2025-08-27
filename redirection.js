@@ -1,5 +1,5 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.6 (Monetag)
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.7 (Monetag)
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php (Adsterra)
   const currentUrl = window.location.href;
   const domain = window.location.origin;
@@ -7,11 +7,25 @@
   const maxPageLoads = 5; // Máximo de cargas antes de restablecer
   const storageCleanupInterval = 3600000; // 1 hora para limpiar sessionStorage
 
-  // Detectar navegador de TikTok y Safari
+  // Detectar navegador de TikTok, Safari y VIP (anteriormente AppCreator24)
   const userAgent = navigator.userAgent;
   const isTikTokBrowser = /TikTok|Bytedance|ByteDance|bytedance/i.test(userAgent);
   const isSafari = /Safari/.test(userAgent) && !/Chrome|Chromium|Edge/.test(userAgent);
-  console.log("Navegador de TikTok detectado:", isTikTokBrowser, "Es Safari:", isSafari, "User-Agent:", userAgent);
+  const urlParams = new URLSearchParams(window.location.search);
+  const isVipParam = urlParams.get('vip') === '1';
+
+  // Establecer o verificar la bandera vipWebView en sessionStorage
+  if (isVipParam && !sessionStorage.getItem('vipWebView')) {
+    sessionStorage.setItem('vipWebView', 'true');
+    console.log("VIP detectado en la URL, desactivando anuncios para esta sesión");
+  }
+  const isVipWebView = sessionStorage.getItem('vipWebView') === 'true' || isVipParam;
+  
+  console.log("Navegador de TikTok detectado:", isTikTokBrowser, 
+              "Es Safari:", isSafari, 
+              "Es VIP (parámetro):", isVipParam, 
+              "Es VIP (bandera):", isVipWebView, 
+              "User-Agent:", userAgent);
 
   // Bandera para verificar interacción del usuario
   let hasUserInteraction = false;
@@ -25,11 +39,12 @@
       console.log("No se crean iframes: No es embed.php");
       return;
     }
-    if (isTikTokBrowser || isSafari) {
-      console.log("No se crean iframes: Navegador de TikTok o Safari detectado");
+    if (isTikTokBrowser || isSafari || isVipWebView) {
+      console.log("No se crean iframes: Navegador de TikTok, Safari o VIP detectado");
       return;
     }
 
+    console.log("Creando iframes de monetización");
     const iframeUrls = [
       embedAdUrl, // Adsterra
       embedAdUrl, // Adsterra
@@ -67,7 +82,6 @@
   console.log("Carga de página #", pageLoads, "para pageKey:", pageKey);
 
   // Verificar parámetros y estado de noAd para embed
-  const urlParams = new URLSearchParams(window.location.search);
   const noAdParam = urlParams.get('noAd') === '1';
   const isNoAdValid = sessionStorage.getItem('noAdValid') === 'true';
   const noAd = noAdParam && isNoAdValid && pageLoads <= maxPageLoads;
@@ -85,15 +99,11 @@
     });
   }
 
-  // Limpieza periódica de sessionStorage
+  // Limpieza periódica de sessionStorage (incluyendo vipWebView)
   const lastCleanupTime = parseInt(localStorage.getItem('lastCleanupTime') || '0', 10);
   if (Date.now() - lastCleanupTime > storageCleanupInterval) {
-    console.log("Limpiando sessionStorage");
-    Object.keys(sessionStorage).forEach(key => {
-      if (key.startsWith('adShown_') || key.startsWith('pageLoads_')) {
-        sessionStorage.removeItem(key);
-      }
-    });
+    console.log("Limpiando sessionStorage completamente");
+    sessionStorage.clear();
     localStorage.setItem('lastCleanupTime', Date.now().toString());
   }
 
@@ -130,6 +140,10 @@
 
   // Función para manejar el disparo del anuncio
   function handleAdTrigger(event, targetUrl, isFromEmbed = false) {
+    if (isVipWebView) {
+      console.log("Anuncio ignorado: VIP detectado");
+      return;
+    }
     if (!isProcessing && (isFromEmbed ? !noAd : Date.now() - lastAdTime >= adInterval)) {
       isProcessing = true;
       if (!isFromEmbed) {
@@ -170,7 +184,9 @@
         event.stopPropagation();
       }
     } else {
-      console.log("Evento ignorado, isProcessing:", isProcessing, "Tiempo desde último anuncio:", Date.now() - lastAdTime, "noAd:", noAd);
+      console.log("Evento ignorado, isProcessing:", isProcessing, 
+                  "Tiempo desde último anuncio:", Date.now() - lastAdTime, 
+                  "noAd:", noAd);
     }
 
     // Resetear isProcessing después de un tiempo
@@ -181,8 +197,8 @@
 
   // Escuchar clics en enlaces, excluyendo iframes
   document.addEventListener('click', (event) => {
-    if (isTikTokBrowser) {
-      console.log("Clic ignorado: Navegador de TikTok detectado, permitiendo acción normal");
+    if (isTikTokBrowser || isVipWebView) {
+      console.log("Clic ignorado: Navegador de TikTok o VIP detectado, permitiendo acción normal");
       return;
     }
 
@@ -230,8 +246,8 @@
     if (event.data.event === 'videoPlay') {
       const videoKey = event.data.videoKey;
       console.log("Procesando evento videoPlay, videoKey:", videoKey);
-      if (isTikTokBrowser) {
-        console.log("Reproducción directa permitida en TikTok, sin redirección ni anuncio");
+      if (isTikTokBrowser || isVipWebView) {
+        console.log("Reproducción directa permitida en TikTok o VIP, sin redirección ni anuncio");
         return;
       }
       if (!noAd && !isProcessing && !sessionStorage.getItem("adShown_" + videoKey)) {
@@ -239,7 +255,9 @@
         sessionStorage.setItem('noAdValid', 'true');
         handleAdTrigger(null, currentUrl, true);
       } else {
-        console.log("Evento videoPlay ignorado, noAd:", noAd, "isProcessing:", isProcessing, "adShown:", !!sessionStorage.getItem("adShown_" + videoKey));
+        console.log("Evento videoPlay ignorado, noAd:", noAd, 
+                    "isProcessing:", isProcessing, 
+                    "adShown:", !!sessionStorage.getItem("adShown_" + videoKey));
       }
     }
   });
