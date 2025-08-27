@@ -1,5 +1,5 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.5 (Monetag)
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.6 (Monetag)
   const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php (Adsterra)
   const currentUrl = window.location.href;
   const domain = window.location.origin;
@@ -16,8 +16,15 @@
   // Bandera para verificar interacción del usuario
   let hasUserInteraction = false;
 
-  // Crear iframes ocultos para monetización solo tras interacción del usuario
+  // Determinar si estamos en embed.php
+  const isEmbedPage = /embed\.php/.test(currentUrl);
+
+  // Crear iframes ocultos solo para embed.php tras interacción del usuario
   function createMonetizationIframes() {
+    if (!isEmbedPage) {
+      console.log("No se crean iframes: No es embed.php");
+      return;
+    }
     if (isTikTokBrowser || isSafari) {
       console.log("No se crean iframes: Navegador de TikTok o Safari detectado");
       return;
@@ -32,17 +39,23 @@
     ];
 
     iframeUrls.forEach((url, index) => {
-      const iframe = document.createElement('iframe');
-      iframe.src = url;
-      iframe.style.display = 'none';
-      iframe.style.width = '0px';
-      iframe.style.height = '0px';
-      iframe.style.border = 'none';
-      iframe.id = `monetization-iframe-${index}`;
-      iframe.title = `Monetization Iframe ${index}`;
-      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-      document.body.appendChild(iframe);
-      console.log(`Iframe oculto ${index} creado con URL: ${url}`);
+      try {
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.display = 'none';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = 'none';
+        iframe.id = `monetization-iframe-${index}`;
+        iframe.title = `Monetization Iframe ${index}`;
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+        iframe.onerror = () => console.error(`Error cargando iframe ${index}: ${url}`);
+        iframe.onload = () => console.log(`Iframe ${index} cargado exitosamente: ${url}`);
+        document.body.appendChild(iframe);
+        console.log(`Iframe oculto ${index} creado con URL: ${url}`);
+      } catch (e) {
+        console.error(`Error creando iframe ${index}:`, e);
+      }
     });
   }
 
@@ -58,7 +71,7 @@
   const noAdParam = urlParams.get('noAd') === '1';
   const isNoAdValid = sessionStorage.getItem('noAdValid') === 'true';
   const noAd = noAdParam && isNoAdValid && pageLoads <= maxPageLoads;
-  console.log("Sitio principal cargado, noAd:", noAd, "noAdParam:", noAdParam, "isNoAdValid:", isNoAdValid, "pageLoads:", pageLoads, "URL:", currentUrl);
+  console.log("Sitio cargado, noAd:", noAd, "noAdParam:", noAdParam, "isNoAdValid:", isNoAdValid, "pageLoads:", pageLoads, "URL:", currentUrl);
 
   // Restablecer pageLoads si se superan las 5 cargas
   if (pageLoads > maxPageLoads) {
@@ -138,6 +151,8 @@
       // Intentar abrir nueva pestaña
       const newWindow = window.open(newTabUrl, '_blank');
       if (newWindow) {
+        newWindow.blur();
+        window.focus();
         console.log("Nueva pestaña abierta con:", newTabUrl);
       } else {
         console.error("Fallo al abrir nueva pestaña");
@@ -194,7 +209,7 @@
       const targetUrl = target.href;
       if (!isSameDomain(targetUrl)) {
         console.log("Clic ignorado, URL fuera del dominio:", targetUrl);
-      return;
+        return;
       }
 
       if (isImageUrl(targetUrl)) {
@@ -221,6 +236,7 @@
       }
       if (!noAd && !isProcessing && !sessionStorage.getItem("adShown_" + videoKey)) {
         sessionStorage.setItem("adShown_" + videoKey, "true");
+        sessionStorage.setItem('noAdValid', 'true');
         handleAdTrigger(null, currentUrl, true);
       } else {
         console.log("Evento videoPlay ignorado, noAd:", noAd, "isProcessing:", isProcessing, "adShown:", !!sessionStorage.getItem("adShown_" + videoKey));
@@ -229,4 +245,3 @@
   });
 
 })();
-
