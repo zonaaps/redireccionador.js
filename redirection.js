@@ -1,11 +1,13 @@
 (function() {
-  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.7 (Monetag)
-  const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para embed.php (Adsterra)
+  const clickAdUrl = "https://otieu.com/4/9467773"; // Anuncio para clics en la página principal JEF-2.8 (Monetag)
+  const embedAdUrl = "https://yawnfreakishnotably.com/x5au88i2?key=b204c2328553c7815136f462216fa2ab"; // Anuncio para iframes ocultos (Adsterra)
   const currentUrl = window.location.href;
   const domain = window.location.origin;
   const adInterval = 300000; // 5 minutos para clics
+  const iframeInterval = 180000; // 3 minutos para iframes ocultos
   const maxPageLoads = 5; // Máximo de cargas antes de restablecer
   const storageCleanupInterval = 3600000; // 1 hora para limpiar sessionStorage
+  const maxIframes = 5; // Máximo de iframes ocultos por tanda
 
   // Detectar navegador de TikTok, Safari y VIP (anteriormente AppCreator24)
   const userAgent = navigator.userAgent;
@@ -30,48 +32,46 @@
   // Bandera para verificar interacción del usuario
   let hasUserInteraction = false;
 
-  // Determinar si estamos en embed.php
-  const isEmbedPage = /embed\.php/.test(currentUrl);
-
-  // Crear iframes ocultos solo para embed.php tras interacción del usuario
+  // Crear iframes ocultos cada 3 minutos
   function createMonetizationIframes() {
-    if (!isEmbedPage) {
-      console.log("No se crean iframes: No es embed.php");
-      return;
-    }
     if (isTikTokBrowser || isSafari || isVipWebView) {
       console.log("No se crean iframes: Navegador de TikTok, Safari o VIP detectado");
       return;
     }
 
     console.log("Creando iframes de monetización");
-    const iframeUrls = [
-      embedAdUrl, // Adsterra
-      embedAdUrl, // Adsterra
-      embedAdUrl, // Adsterra
-      embedAdUrl, // Adsterra
-      embedAdUrl // Adsterra
-    ];
+    // Eliminar iframes existentes para evitar acumulación
+    document.querySelectorAll('[id^="monetization-iframe-"]').forEach(iframe => iframe.remove());
 
-    iframeUrls.forEach((url, index) => {
+    for (let i = 0; i < maxIframes; i++) {
       try {
         const iframe = document.createElement('iframe');
-        iframe.src = url;
+        iframe.src = embedAdUrl;
         iframe.style.display = 'none';
         iframe.style.width = '0px';
         iframe.style.height = '0px';
         iframe.style.border = 'none';
-        iframe.id = `monetization-iframe-${index}`;
-        iframe.title = `Monetization Iframe ${index}`;
+        iframe.id = `monetization-iframe-${i}`;
+        iframe.title = `Monetization Iframe ${i}`;
         iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-        iframe.onerror = () => console.error(`Error cargando iframe ${index}: ${url}`);
-        iframe.onload = () => console.log(`Iframe ${index} cargado exitosamente: ${url}`);
+        iframe.onerror = () => console.error(`Error cargando iframe ${i}: ${embedAdUrl}`);
+        iframe.onload = () => console.log(`Iframe ${i} cargado exitosamente: ${embedAdUrl}`);
         document.body.appendChild(iframe);
-        console.log(`Iframe oculto ${index} creado con URL: ${url}`);
+        console.log(`Iframe oculto ${i} creado con URL: ${embedAdUrl}`);
       } catch (e) {
-        console.error(`Error creando iframe ${index}:`, e);
+        console.error(`Error creando iframe ${i}:`, e);
       }
-    });
+    }
+  }
+
+  // Iniciar creación periódica de iframes tras interacción
+  function startIframeCreation() {
+    if (!hasUserInteraction) {
+      hasUserInteraction = true;
+      createMonetizationIframes();
+      setInterval(createMonetizationIframes, iframeInterval);
+      console.log("Iniciado ciclo de creación de iframes cada 3 minutos");
+    }
   }
 
   // Generar una clave única para la página (basada en la URL)
@@ -81,7 +81,7 @@
   sessionStorage.setItem('pageLoads_' + pageKey, pageLoads);
   console.log("Carga de página #", pageLoads, "para pageKey:", pageKey);
 
-  // Verificar parámetros y estado de noAd para embed
+  // Verificar parámetros y estado de noAd
   const noAdParam = urlParams.get('noAd') === '1';
   const isNoAdValid = sessionStorage.getItem('noAdValid') === 'true';
   const noAd = noAdParam && isNoAdValid && pageLoads <= maxPageLoads;
@@ -202,11 +202,8 @@
       return;
     }
 
-    // Registrar interacción del usuario para cargar iframes
-    if (!hasUserInteraction) {
-      hasUserInteraction = true;
-      createMonetizationIframes();
-    }
+    // Registrar interacción del usuario para iniciar iframes
+    startIframeCreation();
 
     if (event.target.closest('iframe') || event.target.ownerDocument.defaultView !== window) {
       console.log("Clic dentro de iframe o documento secundario ignorado");
@@ -240,7 +237,7 @@
     }
   }, { capture: true });
 
-  // Escuchar mensajes postMessage desde embed.php
+  // Escuchar mensajes postMessage desde el reproductor
   window.addEventListener('message', function(event) {
     console.log("Mensaje recibido en el sitio principal:", event.data);
     if (event.data.event === 'videoPlay') {
