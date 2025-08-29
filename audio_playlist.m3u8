@@ -1,0 +1,7 @@
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=64000,CODECS="mp4a.40.2"
+https://zonaaps-player.xyz/HLS/m3u8_files/audio/audio_64.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=128000,CODECS="mp4a.40.2"
+https://zonaaps-player.xyz/HLS/m3u8_files/audio/audio_128.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=192000,CODECS="mp4a.40.2"
+https://zonaaps-player.xyz/HLS/m3u8_files/audio/audio_192.m3u8
